@@ -5,6 +5,8 @@
  */
 package com.sonnh.audiorenametitle;
 
+import com.mpatric.mp3agic.ID3v1;
+import com.mpatric.mp3agic.ID3v1Tag;
 import com.mpatric.mp3agic.ID3v2;
 import com.mpatric.mp3agic.ID3v24Tag;
 import com.mpatric.mp3agic.InvalidDataException;
@@ -39,8 +41,11 @@ public class Main {
             String executionPath = System.getProperty("user.dir");
 
             String location = executionPath.replace("\\", "/");
-           // int lastFolderIdx = location.lastIndexOf("/");
-           // location = location.substring(0, lastFolderIdx);
+            // int lastFolderIdx = location.lastIndexOf("/");
+            // location = location.substring(0, lastFolderIdx);
+
+         //   location = "D:/Relax/English/Lyly/Lession 7/Homework Part 2/Part 3 - 4";
+
             System.out.println("Ok, I will check this folder : " + location);
 
             exploreFolder(location);
@@ -53,7 +58,6 @@ public class Main {
     private static void exploreFolder(String folderPath) {
 
         //System.out.println("START RENAME FILE (IF HAVE)!");
-
         File f = new File(folderPath);
         File[] allSubFiles = f.listFiles();
         for (File file : allSubFiles) {
@@ -77,28 +81,53 @@ public class Main {
     private static void changeTitleByFileName(File file) {
 
         try {
+
+            String fullFileName = file.getName();
+
             Mp3File mp3file = new Mp3File(file);
             ID3v2 id3v2Tag;
-            if (mp3file.hasId3v1Tag()) {
+            ID3v1 id3v1Tag;
+            if (mp3file.hasId3v2Tag()) {
                 id3v2Tag = mp3file.getId3v2Tag();
 
             } else {
                 // mp3 does not have an ID3v2 tag, let's create one..
                 id3v2Tag = new ID3v24Tag();
-                mp3file.setId3v1Tag(id3v2Tag);
+                mp3file.setId3v2Tag(id3v2Tag);
+            }
+
+            if (mp3file.hasId3v1Tag()) {
+                id3v1Tag = mp3file.getId3v1Tag();
+
+            } else {
+                // mp3 does not have an ID3v1 tag, let's create one..
+                id3v1Tag = new ID3v1Tag();
+                mp3file.setId3v1Tag(id3v1Tag);
             }
 
             String fileName = file.getName().substring(0, file.getName().length() - 4);
 
             // set name for title
-            if (!id3v2Tag.getTitle().equals(fileName)) {
+            String title = id3v2Tag.getTitle();
+            if (title != null && !title.equals(fileName)) {
 
-                System.out.println("Oh, I have discovered a miss match between Name= [" + fileName +"] and Title= [" + id3v2Tag.getTitle() +"]");
+                System.out.println("Oh, I have discovered a miss match between Name= [" + fileName + "] and Title= [" + id3v2Tag.getTitle() + "]");
                 id3v2Tag.setTitle(fileName);
 
                 // save info
-                mp3file.save(file.getName());
+                mp3file.save(fullFileName);
                 System.out.println("Rename success!");
+            } else {
+                title = id3v1Tag.getTitle();
+                if (title != null && !title.equals(fileName)) {
+
+                    System.out.println("Oh, I have discovered a miss match between Name= [" + fileName + "] and Title= [" + id3v2Tag.getTitle() + "]");
+                    id3v1Tag.setTitle(fileName);
+
+                    // save info
+                    mp3file.save(fullFileName);
+                    System.out.println("Rename success!");
+                }
             }
 //                System.out.println("Track: " + id3v2Tag.getTrack());
 //                System.out.println("Artist: " + id3v2Tag.getArtist());
@@ -111,5 +140,4 @@ public class Main {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
 }
